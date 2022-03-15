@@ -1,0 +1,20 @@
+http:
+  port: 8081
+
+hooks:
+  - requirements:
+      eventType: "git.push"
+      resourceContainers:
+        project:
+          id: "87086fa8-9978-4dad-ae82-034b6d829247"
+    action:
+      cwd: "."
+      command: "cd"
+
+log:
+  file: "./last.log"
+  levels:
+    errors: true
+    warnings: true
+    info: true
+    debug: true
