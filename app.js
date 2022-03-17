@@ -120,7 +120,7 @@ function doAction(action)
 function handleHooks(hook)
 {
     const MSG = (() => {
-        if (!hook.hasOwnProperty("message"))
+        if (!hook.hasOwnProperty("message") || !hook["message"])
         {
             return "(No message)";
         }
@@ -168,11 +168,11 @@ function handleHooks(hook)
 ////////////////////////
 
 // Config requirement validation
-if (!CFG.hasOwnProperty("http"))
+if (!CFG.hasOwnProperty("http") || !CFG["http"])
 {
     fail(`'${CFG_PATH}' does not have a data for 'http'!`);
 }
-if (!CFG["http"].hasOwnProperty("port"))
+if (!CFG["http"].hasOwnProperty("port") || !CFG["http"]["port"])
 {
     fail(`'${CFG_PATH}' does not have a value for 'http.port'!`);
 }
@@ -180,11 +180,11 @@ if (typeof(CFG["http"]["port"]) !== 'number')
 {
     fail(`The value of 'http.port' in '${CFG_PATH}' is not a number (eg: 8081)`);
 }
-if (!CFG.hasOwnProperty("hooks"))
+if (!CFG.hasOwnProperty("hooks") || !CFG["hooks"])
 {
     fail(`'${CFG_PATH}' does not have any hooks!`);
 }
-if (typeof(CFG["hooks"]) !== "object" || CFG["hooks"][0] === undefined)
+if (typeof(CFG["hooks"]) !== "object" || !CFG["hooks"][0])
 {
     fail(`The value of 'hooks' in '${CFG_PATH}' is not a list!`);
 }
@@ -230,6 +230,7 @@ HTTP.createServer((req, res) => {
         var body = "";
         req.on("data", chunk => body += chunk.toString());
         req.on("end", () => {
+            LOG.debug(`Handling POST request:${JSON.stringify(JSON.parse(body))}`);
             if (handleHooks(JSON.parse(body)))
             {
                 res.writeHead(200, {"Content-Type":"text/plain"});
@@ -250,4 +251,6 @@ HTTP.createServer((req, res) => {
         res.write(e);
         res.end();
     }
+}).on("uncaughtException", (err) => {
+    LOG.error(`Uncaught exception thrown: ${err}`);
 }).listen(PORT);
