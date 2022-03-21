@@ -2,7 +2,8 @@ http:
   port: 8081
 
 hooks:
-  - requirements:
+  - name: "Example"
+    requirements:
       eventType: "git.push"
       resourceContainers:
         project:
@@ -17,7 +18,7 @@ log:
     errors: true
     warnings: true
     info: true
-    debug: true
+    debug: false
   web-portal:
     enabled: true
     count: 20

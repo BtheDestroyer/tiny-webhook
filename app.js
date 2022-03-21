@@ -54,13 +54,6 @@ function fail(reason)
     exit(1);
 }
 
-if (!CFG.hasOwnProperty("http")
- || !CFG["http"].hasOwnProperty("port")
- || typeof(CFG["http"]["port"]) !== 'number')
-{
-    fail(`'${CFG_PATH}' does not have a value for http.port or it is not a number (eg: 8081)`);
-}
-
 function validateRequirement(key, value, request)
 {
     if (!request.hasOwnProperty(key))
@@ -97,8 +90,10 @@ function validateRequirement(key, value, request)
 
 function doAction(action)
 {
+    var performedAction = false;
     if (action.hasOwnProperty("command"))
     {
+        performedAction = true;
         exec(action["command"],
             {cwd: action.hasOwnProperty("cwd") ? action["cwd"] : "."},
             (error, stdout, stderr) =>
@@ -118,12 +113,14 @@ function doAction(action)
                 }
             });
     }
+    
+    return performedAction;
 }
 
 function handleHooks(hook)
 {
     const MSG = (() => {
-        if (!hook.hasOwnProperty("message"))
+        if (!hook.hasOwnProperty("message") || !hook["message"])
         {
             return "(No message)";
         }
@@ -141,20 +138,69 @@ function handleHooks(hook)
         }
     })();
     LOG.info(`Webhook request: ${MSG}`);
+    var i = 0;
     for (const HOOK of CFG["hooks"])
     {
+        const CURRENT_NAME = (() => {
+            if (HOOK.hasOwnProperty("name"))
+            {
+                return HOOK["name"];
+            }
+            return `Hook #${i} (nameless)`;
+        })();
+        ++i;
+        LOG.debug(`Testing hook "${CURRENT_NAME}"`);
         if (validateRequirement("root", HOOK["requirements"], { "root": hook }))
         {
-            doAction(HOOK["action"]);
+            LOG.info(`Handled by hook: "${CURRENT_NAME}"`);
+            if (!doAction(HOOK["action"]))
+            {
+                LOG.warning(`No action performed! Make sure the hook "${CURRENT_NAME}" has a valid 'action'.`);
+            }
             return true;
         }
     }
     return false;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Main program start //
+////////////////////////
+
+// Config requirement validation
+if (!CFG.hasOwnProperty("http") || !CFG["http"])
+{
+    fail(`'${CFG_PATH}' does not have a data for 'http'!`);
+}
+if (!CFG["http"].hasOwnProperty("port") || !CFG["http"]["port"])
+{
+    fail(`'${CFG_PATH}' does not have a value for 'http.port'!`);
+}
+if (typeof(CFG["http"]["port"]) !== 'number')
+{
+    fail(`The value of 'http.port' in '${CFG_PATH}' is not a number (eg: 8081)`);
+}
+if (!CFG.hasOwnProperty("hooks") || !CFG["hooks"])
+{
+    fail(`'${CFG_PATH}' does not have any hooks!`);
+}
+if (typeof(CFG["hooks"]) !== "object" || !CFG["hooks"][0])
+{
+    fail(`The value of 'hooks' in '${CFG_PATH}' is not a list!`);
+}
+
+// Test all hooks for a name
+for (const IDX in CFG["hooks"])
+{
+    if (!CFG["hooks"][IDX].hasOwnProperty("name"))
+    {
+        LOG.warning(`Hook #${IDX} has no 'name'`);
+    }
+}
+
 const PORT = CFG["http"]["port"];
 LOG.info(`Starting tiny-webhook on port ${PORT}`);
-HTTP.createServer(async (req, res) => {
+HTTP.createServer((req, res) => {
     try
     {
         if (req.method === "GET"
@@ -180,7 +226,7 @@ HTTP.createServer(async (req, res) => {
         }
         if (req.method !== "POST")
         {
-            LOG.debug(`Invalid HTTP method recieved: ${req.method}`)
+            LOG.warning(`Unsupported HTTP method (${req.method}) request recieved`)
             res.writeHead(405, {"Content-Type":"text/plain"});
             res.write(`Invalid HTTP method: ${req.method}`);
             res.end();
@@ -189,6 +235,7 @@ HTTP.createServer(async (req, res) => {
         var body = "";
         req.on("data", chunk => body += chunk.toString());
         req.on("end", () => {
+            LOG.debug(`Handling POST request:${JSON.stringify(JSON.parse(body))}`);
             if (handleHooks(JSON.parse(body)))
             {
                 res.writeHead(200, {"Content-Type":"text/plain"});
@@ -196,8 +243,8 @@ HTTP.createServer(async (req, res) => {
                 return;
             }
             res.writeHead(400, {"Content-Type":"text/plain"});
-            const MSG = "Configuration does not have a hook to handle this request.";
-            LOG.warning(`${MSG}\n${body}`);
+            const MSG = "Configuration does not have a hook to handle this request";
+            LOG.warning(`${MSG}:${JSON.stringify(JSON.parse(body))}`);
             res.write(MSG);
             res.end();
         });
@@ -209,4 +256,6 @@ HTTP.createServer(async (req, res) => {
         res.write(e);
         res.end();
     }
+}).on("uncaughtException", (err) => {
+    LOG.error(`Uncaught exception thrown: ${err}`);
 }).listen(PORT);
