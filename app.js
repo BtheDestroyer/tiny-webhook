@@ -157,12 +157,17 @@ LOG.info(`Starting tiny-webhook on port ${PORT}`);
 HTTP.createServer(async (req, res) => {
     try
     {
-        if (req.method === "GET")
+        if (req.method === "GET"
+            && (CFG["log"].hasOwnProperty("web-portal")
+                && CFG["log"]["web-portal"].hasOwnProperty("enabled")
+                && CFG["log"]["web-portal"]["enabled"]))
         {
-            LOG.info(`HTTP GET request recieved. Sending log...`)
+            LOG.debug(`HTTP GET request recieved. Sending log...`)
             res.writeHead(200, {'Content-Type':'text/plain'});
             var messagesString = "";
-            const LOG_LENGTH = 20;
+            const LOG_LENGTH = CFG["log"]["web-portal"].hasOwnProperty("count")
+                                ? CFG["log"]["web-portal"]["count"]
+                                : 20;
             const START = messages.length > 20
                         ? messages.length - LOG_LENGTH
                         : 0;
@@ -175,6 +180,7 @@ HTTP.createServer(async (req, res) => {
         }
         if (req.method !== "POST")
         {
+            LOG.debug(`Invalid HTTP method recieved: ${req.method}`)
             res.writeHead(405, {"Content-Type":"text/plain"});
             res.write(`Invalid HTTP method: ${req.method}`);
             res.end();
