@@ -21,7 +21,7 @@ all: $(OUTPUT)
 
 .PHONY: clean
 clean:
-	rm -rf $(BUILD)
+	rm -rf $(BUILD_DIR)
 
 .PHONY: run
 run: $(OUTPUT)
