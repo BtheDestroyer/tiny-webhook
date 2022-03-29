@@ -4,13 +4,12 @@ http:
 hooks:
   - name: "Example"
     requirements:
-      eventType: "git.push"
-      resourceContainers:
-        project:
-          id: "87086fa8-9978-4dad-ae82-034b6d829247"
+      ref: "refs/heads/example-project"
+      repository:
+        full_name: "BtheDestroyer/tiny-webhook"
     action:
-      cwd: "."
-      command: "cd"
+      cwd: "../project"
+      command: "git pull && make all && make run"
 
 log:
   file: "./last.log"
