@@ -9,7 +9,7 @@ SOURCE_DIR:=$(ROOT)/src
 CXX:=g++
 CXX_FLAGS:=-g -I$(SOURCE_DIR)\
 			-Wall -Wextra\
-			-std=c++20\
+			-std=c++2a\
 			-O3
 LINK_FLAGS:=
 
