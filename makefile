@@ -30,7 +30,7 @@ run: $(OUTPUT)
 $(OUTPUT): $(BUILD_DIR) $(OBJ_FILES)
 	$(CXX) $(OBJ_FILES) $(LINK_FLAGS) -o$(OUTPUT)
 
-$(OBJ_DIR)/%.o: $(OBJ_DIR) $(SOURCE_DIR)/%.cpp
+$(OBJ_DIR)/%.o: $(SOURCE_DIR)/%.cpp $(OBJ_DIR)
 	$(CXX) -c $(CXX_FLAGS) $< -o$@
 
 $(OBJ_DIR):
