@@ -3,8 +3,7 @@
 #ifndef COMMIT
 #define COMMIT [Unknown Commit]
 #endif
-#define STRINGIFY(x) #x
-#define COMMIT_STR STRINGIFY(COMMIT)
+#define COMMIT_STR #COMMIT
 
 int main()
 {
