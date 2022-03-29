@@ -1,8 +1,9 @@
-NAME=example
+NAME:=example
 ROOT:=$(shell pwd)
 BUILD_DIR:=$(ROOT)/build
 OBJ_DIR:=$(BUILD_DIR)/obj
 OUTPUT:=$(BUILD_DIR)/$(NAME)
+COMMIT:=$(shell git rev-parse --short HEAD)
 
 SOURCE_DIR:=$(ROOT)/src
 
@@ -10,7 +11,8 @@ CXX:=g++
 CXX_FLAGS:=-g -I$(SOURCE_DIR)\
 			-Wall -Wextra\
 			-std=c++2a\
-			-O3
+			-O3\
+			-DCOMMIT=$(COMMIT)
 LINK_FLAGS:=
 
 CPP_FILES:=$(wildcard $(SOURCE_DIR)/*.cpp)
